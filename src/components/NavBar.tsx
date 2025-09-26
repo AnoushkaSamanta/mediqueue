@@ -1,3 +1,5 @@
+import React from 'react';
+import Link from 'next/link';
 const Navbar: React.FC = () => {
   return (
     <nav className="bg-[#F0DCC7] px-6 py-4">
@@ -18,9 +20,11 @@ const Navbar: React.FC = () => {
         
         {/* Login/SignUp Button - Right */}
         <div className="hidden md:block">
+          <Link href="/(site)/(auth)/login">
           <button className="bg-[#005F73] px-6 py-2 rounded-full hover:bg-[#F0DCC7] hover:text-[#005F73] hover:border-[#005F73] hover:border transition-colors text-[#F0DCC7]">
             Login / SignUp
           </button>
+          </Link>
         </div>
       </div>
     </nav>
