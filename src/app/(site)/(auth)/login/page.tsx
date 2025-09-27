@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 interface LoginFormData {
   username: string;
@@ -273,6 +274,7 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
                   </button>
 
                   <div className="text-center">
+                    <Link href="/signup">
                     <button
                       type="button"
                       onClick={handleSignUpClick}
@@ -281,6 +283,7 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
                     >
                       Don&apos;t have an account? Sign up
                     </button>
+                    </Link>
                   </div>
                 </form>
               </div>
