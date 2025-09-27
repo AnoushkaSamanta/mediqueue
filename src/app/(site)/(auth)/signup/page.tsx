@@ -608,7 +608,13 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
 
                   <button
                     type="submit"
-                    disabled={isLoading}
+                   disabled={
+                      isLoading ||
+                      !formData.fullName.trim() ||
+                      !formData.password.trim() ||
+                      (userType === "doctor" && (!formData.emailOrMobile.trim() || !formData.specialty.trim() || !formData.clinicName.trim())) ||
+                      (userType === "patient" && !formData.mobileOrEmail.trim())
+                    }
                     className="w-full py-3 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                     style={{
                       backgroundColor: "#005F73",
