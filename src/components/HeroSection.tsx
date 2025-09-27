@@ -1,3 +1,4 @@
+import Link from "next/link";
 import heroimage from "../assets/images/heroimage.png"
 
 // Hero Section Component
@@ -14,11 +15,13 @@ const HeroSection = () => {
             </h1>
             <div className="flex space-x-4">
               <button className="bg-[#005F73] text-[#F0DCC7] px-8 py-3 rounded-full  transition-colors hover:bg-[#F0DCC7] hover:text-[#005F73] hover:border-[#005F73] hover:border">
-                Get Started
+                Learn More
               </button>
+              <Link href="/login">
               <button className="border-2 border-[#005F73] text-[#005F73] px-8 py-3 rounded-full hover:bg-[#005F73] hover:text-white transition-colors">
                 Login
               </button>
+              </Link>
             </div>
           </div>
           <div className="flex items-center justify-center">

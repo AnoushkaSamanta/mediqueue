@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
         {/* Middle Navigation */}
         <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
           <div className="bg-[#005F73] rounded-full px-8 py-3 flex items-center space-x-6">
-            <a href="#" className="text-[#F0DCC7] hover:text-gray-200 transition-colors">Home</a>
+            <a href="/" className="text-[#F0DCC7] hover:text-gray-200 transition-colors">Home</a>
             <a href="#" className="text-[#F0DCC7] hover:text-gray-200 transition-colors">Search Doctors</a>
             <a href="#" className="text-[#F0DCC7] hover:text-gray-200 transition-colors">Explore Pharmacies</a>
           </div>
@@ -20,7 +20,7 @@ const Navbar: React.FC = () => {
         
         {/* Login/SignUp Button - Right */}
         <div className="hidden md:block">
-          <Link href="/(site)/(auth)/login">
+          <Link href="/login">
           <button className="bg-[#005F73] px-6 py-2 rounded-full hover:bg-[#F0DCC7] hover:text-[#005F73] hover:border-[#005F73] hover:border transition-colors text-[#F0DCC7]">
             Login / SignUp
           </button>
