@@ -1,3 +1,4 @@
+"use client"
 import bookdoctor from "../assets/images/bookdoctor.png"
 
 // Book Your Doctor Section Component

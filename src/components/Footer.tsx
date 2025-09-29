@@ -1,4 +1,3 @@
-
 // Footer Component
 const Footer: React.FC = () => {
   return (

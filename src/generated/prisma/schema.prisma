@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Specialty {
+  General_Physician @map("General Physician")
+  Dentist
+  Cardiologist
+  Dermatologist
+  Orthopedic
+  Pediatrician
+  Gynecologist
+  ENT_Specialist    @map("ENT Specialist")
+  Ophthalmologist
+  Neurologist
+  Other
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+  Prefer_not_to_say @map("Prefer not to say")
+}
+
+enum TicketStatus {
+  waiting
+  in_consultation
+  consulted
+  left
+  cancelled
+}
+
+enum StockStatus {
+  in_stock
+  out_of_stock
+  low_stock
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model Doctor {
+  id                   String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fullName             String    @map("full_name") @db.VarChar(255)
+  email                String?   @unique @db.VarChar(255)
+  mobileNumber         String?   @unique @map("mobile_number") @db.VarChar(20)
+  passwordHash         String    @map("password_hash") @db.VarChar(255)
+  specialty            Specialty
+  clinicHospitalName   String    @map("clinic_hospital_name") @db.VarChar(255)
+  clinicAddress        String    @map("clinic_address") @db.Text
+  workingHours         Json      @default("{}") @map("working_hours")
+  consultationDuration Int       @map("consultation_duration")
+  contactNumber        String?   @map("contact_number") @db.VarChar(20)
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  tickets       Ticket[]
+  prescriptions Prescription[]
+
+  @@index([specialty], name: "idx_doctors_specialty")
+  @@index([clinicAddress], name: "idx_doctors_clinic_address")
+  @@index([email], name: "idx_doctors_email")
+  @@index([mobileNumber], name: "idx_doctors_mobile")
+  @@index([isActive], name: "idx_doctors_active")
+  @@map("doctors")
+}
+
+model Patient {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  fullName     String    @map("full_name") @db.VarChar(255)
+  mobileNumber String?   @unique @map("mobile_number") @db.VarChar(20)
+  email        String?   @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  age          Int?
+  gender       Gender?
+  address      String?   @db.Text
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  tickets       Ticket[]
+  prescriptions Prescription[]
+
+  @@index([mobileNumber], name: "idx_patients_mobile")
+  @@index([email], name: "idx_patients_email")
+  @@map("patients")
+}
+
+model Ticket {
+  id                     String       @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  patientId              String       @map("patient_id") @db.Uuid
+  doctorId               String       @map("doctor_id") @db.Uuid
+  ticketNumber           String       @unique @map("ticket_number") @db.VarChar(50)
+  bookingTime            DateTime     @default(now()) @map("booking_time") @db.Timestamptz(6)
+  status                 TicketStatus @default(waiting)
+  estimatedWaitTime      Int?         @map("estimated_wait_time")
+  queuePosition          Int?         @map("queue_position")
+  actualConsultationTime DateTime?    @map("actual_consultation_time") @db.Timestamptz(6)
+  consultationDuration   Int?         @map("consultation_duration")
+  createdAt              DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  prescription Prescription?
+
+  @@index([patientId], name: "idx_tickets_patient")
+  @@index([doctorId], name: "idx_tickets_doctor")
+  @@index([status], name: "idx_tickets_status")
+  @@index([bookingTime], name: "idx_tickets_booking_time")
+  @@index([doctorId, status], name: "idx_tickets_doctor_status")
+  @@index([ticketNumber], name: "idx_tickets_number")
+  @@map("tickets")
+}
+
+model Prescription {
+  id                  String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  ticketId            String    @unique @map("ticket_id") @db.Uuid
+  doctorId            String    @map("doctor_id") @db.Uuid
+  patientId           String    @map("patient_id") @db.Uuid
+  diagnosis           String?   @db.Text
+  symptoms            String?   @db.Text
+  notes               String?   @db.Text
+  followUpDate        DateTime? @map("follow_up_date") @db.Date
+  prescriptionFileUrl String?   @map("prescription_file_url") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  ticket    Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  doctor    Doctor     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  patient   Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  medicines Medicine[]
+
+  @@index([ticketId], name: "idx_prescriptions_ticket")
+  @@index([patientId], name: "idx_prescriptions_patient")
+  @@index([doctorId], name: "idx_prescriptions_doctor")
+  @@map("prescriptions")
+}
+
+model Medicine {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  prescriptionId String   @map("prescription_id") @db.Uuid
+  medicineName   String   @map("medicine_name") @db.VarChar(255)
+  dosage         String   @db.VarChar(100)
+  frequency      String   @db.VarChar(100)
+  duration       String   @db.VarChar(100)
+  instructions   String?  @db.Text
+  quantity       Int?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  prescription Prescription           @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  availability MedicineAvailability[]
+
+  @@index([prescriptionId], name: "idx_medicines_prescription")
+  @@index([medicineName], name: "idx_medicines_name")
+  @@map("medicines")
+}
+
+model Pharmacy {
+  id                  String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                String   @db.VarChar(255)
+  address             String   @db.Text
+  contactNumber       String   @map("contact_number") @db.VarChar(20)
+  email               String?  @db.VarChar(255)
+  locationCoordinates Json     @map("location_coordinates")
+  openingHours        Json     @default("{}") @map("opening_hours")
+  isActive            Boolean  @default(true) @map("is_active")
+  rating              Decimal? @db.Decimal(2, 1)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  medicineAvailability MedicineAvailability[]
+
+  @@index([locationCoordinates], name: "idx_pharmacies_location", type: Gin)
+  @@index([isActive], name: "idx_pharmacies_active")
+  @@index([name], name: "idx_pharmacies_name")
+  @@map("pharmacies")
+}
+
+model MedicineAvailability {
+  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  medicineId  String      @map("medicine_id") @db.Uuid
+  pharmacyId  String      @map("pharmacy_id") @db.Uuid
+  stockStatus StockStatus @default(in_stock) @map("stock_status")
+  price       Decimal?    @db.Decimal(10, 2)
+  lastUpdated DateTime    @default(now()) @map("last_updated") @db.Timestamptz(6)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  medicine Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  pharmacy Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+
+  @@unique([medicineId, pharmacyId])
+  @@index([medicineId], name: "idx_medicine_availability_medicine")
+  @@index([pharmacyId], name: "idx_medicine_availability_pharmacy")
+  @@index([stockStatus], name: "idx_medicine_availability_stock")
+  @@map("medicine_availability")
+}

@@ -1,3 +1,4 @@
+"use client"
 import findpharmacy from "../assets/images/findpharmacy.png"
 
 // Find a Pharmacy Section Component
