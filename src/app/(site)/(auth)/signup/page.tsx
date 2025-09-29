@@ -153,7 +153,7 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center py-8"
+      className="min-h-screen flex items-center justify-center "
       style={{ backgroundColor: "var(--color-2)" }}
     >
       <style jsx global>{`
@@ -174,6 +174,16 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
         
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #004a59;
+        }
+        
+        /* Hidden scrollbar for doctor signup */
+        .hidden-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .hidden-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
         
         /* Custom placeholder styles */
@@ -305,7 +315,9 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
               transition={{ duration: 0.5 }}
             >
               <div
-                className="rounded-3xl p-8 max-h-[80vh] overflow-y-auto custom-scrollbar"
+                className={`rounded-3xl p-8 max-h-[80vh] overflow-y-auto ${
+                  userType === "doctor" ? "hidden-scrollbar" : "custom-scrollbar"
+                }`}
                 style={{ backgroundColor: "#F0DCC7" }}
               >
                 <h2

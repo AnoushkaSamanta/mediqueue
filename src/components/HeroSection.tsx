@@ -4,11 +4,11 @@ import heroimage from "../assets/images/heroimage.png"
 // Hero Section Component
 const HeroSection = () => {
   return (
-    <section className="bg-[#F0DCC7] px-6 py-16">
+    <section className="bg-[#F0DCC7] min-h-screen px-6 py-16">
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="max-w-2xl">
-            <h1 className="text-7xl font-semibold text-black mb-8 leading-tight">
+            <h1 className="text-7xl font-semibold text-[#005F73] mb-8 leading-tight">
               One tap for<br />
               your doctor's<br />
               appointment.
