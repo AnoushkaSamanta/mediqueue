@@ -4,12 +4,9 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-
-interface LoginFormData {
-  username: string;
-  password: string;
-  userType: "doctor" | "patient";
-}
+import DoctorLoginForm from "@/components/auth/DoctorLoginForm";
+import PatientLoginForm from "@/components/auth/PatientLoginForm";
+import { LoginFormData, BaseLoginFormData } from "@/components/auth/LoginFormTypes";
 
 interface LoginComponentProps {
   onLogin?: (formData: LoginFormData) => void;
@@ -21,7 +18,7 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
   onSignUp,
 }) => {
   const [userType, setUserType] = useState<"doctor" | "patient">("patient");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<BaseLoginFormData>({
     username: "",
     password: "",
   });
@@ -84,7 +81,7 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="min-h-screen flex items-center justify-center "
       style={{ backgroundColor: "var(--color-2)" }}
     >
       <div
@@ -212,51 +209,19 @@ const LoginComponent: React.FC<LoginComponentProps> = ({
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label
-                      htmlFor="username"
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#005F73" }}
-                    >
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      id="username"
-                      name="username"
-                      value={formData.username}
+                  {userType === "doctor" ? (
+                    <DoctorLoginForm
+                      formData={formData}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200"
-                      style={{
-                        backgroundColor: "white",
-                      }}
-                      required
                       disabled={isLoading}
                     />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#005F73" }}
-                    >
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
+                  ) : (
+                    <PatientLoginForm
+                      formData={formData}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200"
-                      style={{
-                        backgroundColor: "white",
-                      }}
-                      required
                       disabled={isLoading}
                     />
-                  </div>
+                  )}
 
                   <button
                     type="submit"
