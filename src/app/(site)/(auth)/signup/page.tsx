@@ -4,30 +4,16 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-
-interface DoctorSignupData {
-  fullName: string;
-  emailOrMobile: string;
-  password: string;
-  specialty: string;
-  clinicName: string;
-  clinicAddress: string;
-  workingHours: string;
-  consultationDuration: string;
-  userType: "doctor";
-}
-
-interface PatientSignupData {
-  fullName: string;
-  mobileOrEmail: string;
-  password: string;
-  age: string;
-  gender: string;
-  address: string;
-  userType: "patient";
-}
-
-type SignupFormData = DoctorSignupData | PatientSignupData;
+import DoctorSignupForm from "@/components/auth/DoctorSignupForm";
+import PatientSignupForm from "@/components/auth/PatientSignupForm";
+import Toast from "@/components/ui/Toast";
+import { 
+  DoctorSignupData, 
+  PatientSignupData, 
+  SignupFormData,
+  DoctorFormData,
+  PatientFormData
+} from "@/components/auth/SignupFormTypes";
 
 interface SignupComponentProps {
   onSignup?: (formData: SignupFormData) => void;
@@ -39,95 +25,240 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
   onLogin,
 }) => {
   const [userType, setUserType] = useState<"doctor" | "patient">("patient");
-  const [formData, setFormData] = useState({
+  const [doctorFormData, setDoctorFormData] = useState<DoctorFormData>({
     fullName: "",
     emailOrMobile: "",
-    mobileOrEmail: "",
     password: "",
     specialty: "",
     clinicName: "",
     clinicAddress: "",
     workingHours: "",
     consultationDuration: "",
+  });
+  const [patientFormData, setPatientFormData] = useState<PatientFormData>({
+    fullName: "",
+    mobileOrEmail: "",
+    password: "",
     age: "",
     gender: "",
     address: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false,
+  });
 
   const handleUserTypeToggle = (type: "doctor" | "patient") => {
     setUserType(type);
-    // Reset form when switching user types
-    setFormData({
+    // Reset forms when switching user types
+    setDoctorFormData({
       fullName: "",
       emailOrMobile: "",
-      mobileOrEmail: "",
       password: "",
       specialty: "",
       clinicName: "",
       clinicAddress: "",
       workingHours: "",
       consultationDuration: "",
+    });
+    setPatientFormData({
+      fullName: "",
+      mobileOrEmail: "",
+      password: "",
       age: "",
       gender: "",
       address: "",
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleDoctorInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setDoctorFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handlePatientInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setPatientFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const currentFormData = userType === "doctor" ? doctorFormData : patientFormData;
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type, isVisible: true });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.fullName.trim() || !formData.password.trim()) {
+    if (!currentFormData.fullName.trim() || !currentFormData.password.trim()) {
+      showToast("Please fill in all required fields", "error");
       return;
     }
 
-    if (userType === "doctor" && (!formData.emailOrMobile.trim() || !formData.specialty.trim() || !formData.clinicName.trim())) {
-      return;
+    if (userType === "doctor") {
+      const doctorData = currentFormData as DoctorFormData;
+      if (!doctorData.emailOrMobile.trim() || !doctorData.specialty.trim() || !doctorData.clinicName.trim()) {
+        showToast("Please fill in all required fields for doctor registration", "error");
+        return;
+      }
     }
 
-    if (userType === "patient" && !formData.mobileOrEmail.trim()) {
-      return;
+    if (userType === "patient") {
+      const patientData = currentFormData as PatientFormData;
+      if (!patientData.mobileOrEmail.trim()) {
+        showToast("Please fill in all required fields for patient registration", "error");
+        return;
+      }
     }
 
     setIsLoading(true);
 
     try {
+      let response;
+      
+      // Add debugging logs
+      console.log('Starting signup process for:', userType);
+      console.log('Form data:', userType === "doctor" ? doctorFormData : patientFormData);
+      
+      if (userType === "doctor") {
+        const requestData = {
+          fullName: doctorFormData.fullName,
+          emailOrMobile: doctorFormData.emailOrMobile,
+          password: doctorFormData.password,
+          specialty: doctorFormData.specialty,
+          clinicName: doctorFormData.clinicName,
+          clinicAddress: doctorFormData.clinicAddress,
+          workingHours: doctorFormData.workingHours,
+          consultationDuration: doctorFormData.consultationDuration,
+        };
+        
+        console.log('Sending doctor signup request:', requestData);
+        
+        response = await fetch("/api/auth/signup/doctor", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestData),
+        });
+      } else {
+        const requestData = {
+          fullName: patientFormData.fullName,
+          mobileOrEmail: patientFormData.mobileOrEmail,
+          password: patientFormData.password,
+          age: patientFormData.age,
+          gender: patientFormData.gender,
+          address: patientFormData.address,
+        };
+        
+        console.log('Sending patient signup request:', requestData);
+        
+        response = await fetch("/api/auth/signup/patient", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestData),
+        });
+      }
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      // Check if response is actually JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await response.text();
+        console.error('Non-JSON response received:', textResponse);
+        throw new Error("Server returned non-JSON response. Check server logs for details.");
+      }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+
+      // Success handling
+      showToast(
+        `${userType.charAt(0).toUpperCase() + userType.slice(1)} account created successfully! Please check your email for verification.`,
+        "success"
+      );
+      
+      // Reset forms
+      if (userType === "doctor") {
+        setDoctorFormData({
+          fullName: "",
+          emailOrMobile: "",
+          password: "",
+          specialty: "",
+          clinicName: "",
+          clinicAddress: "",
+          workingHours: "",
+          consultationDuration: "",
+        });
+      } else {
+        setPatientFormData({
+          fullName: "",
+          mobileOrEmail: "",
+          password: "",
+          age: "",
+          gender: "",
+          address: "",
+        });
+      }
+
+      // Call onSignup prop if provided (for external handling)
       if (onSignup) {
         if (userType === "doctor") {
           await onSignup({
-            fullName: formData.fullName,
-            emailOrMobile: formData.emailOrMobile,
-            password: formData.password,
-            specialty: formData.specialty,
-            clinicName: formData.clinicName,
-            clinicAddress: formData.clinicAddress,
-            workingHours: formData.workingHours,
-            consultationDuration: formData.consultationDuration,
+            fullName: doctorFormData.fullName,
+            emailOrMobile: doctorFormData.emailOrMobile,
+            password: doctorFormData.password,
+            specialty: doctorFormData.specialty,
+            clinicName: doctorFormData.clinicName,
+            clinicAddress: doctorFormData.clinicAddress,
+            workingHours: doctorFormData.workingHours,
+            consultationDuration: doctorFormData.consultationDuration,
             userType: "doctor",
           });
         } else {
           await onSignup({
-            fullName: formData.fullName,
-            mobileOrEmail: formData.mobileOrEmail,
-            password: formData.password,
-            age: formData.age,
-            gender: formData.gender,
-            address: formData.address,
+            fullName: patientFormData.fullName,
+            mobileOrEmail: patientFormData.mobileOrEmail,
+            password: patientFormData.password,
+            age: patientFormData.age,
+            gender: patientFormData.gender,
+            address: patientFormData.address,
             userType: "patient",
           });
         }
       }
+
     } catch (error) {
       console.error("Signup error:", error);
+      showToast(
+        error instanceof Error ? error.message : "An error occurred during registration",
+        "error"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -152,10 +283,17 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center "
-      style={{ backgroundColor: "var(--color-2)" }}
-    >
+    <>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
+      <div
+        className="min-h-screen flex items-center justify-center py-10 "
+        style={{ backgroundColor: "var(--color-2)" }}
+      >
       <style jsx global>{`
         /* Custom scrollbar styles */
         .custom-scrollbar::-webkit-scrollbar {
@@ -328,304 +466,32 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
                 </h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Common Fields */}
-                  <div>
-                    <label
-                      htmlFor="fullName"
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#005F73" }}
-                    >
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      id="fullName"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                      style={{
-                        backgroundColor: "white",
-                      }}
-                      required
+                  {userType === "doctor" ? (
+                    <DoctorSignupForm
+                      formData={doctorFormData}
+                      onChange={handleDoctorInputChange}
                       disabled={isLoading}
                     />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor={userType === "doctor" ? "emailOrMobile" : "mobileOrEmail"}
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#005F73" }}
-                    >
-                      {userType === "doctor" ? "Email / Mobile Number *" : "Mobile Number / Email *"}
-                    </label>
-                    <input
-                      type="text"
-                      id={userType === "doctor" ? "emailOrMobile" : "mobileOrEmail"}
-                      name={userType === "doctor" ? "emailOrMobile" : "mobileOrEmail"}
-                      value={userType === "doctor" ? formData.emailOrMobile : formData.mobileOrEmail}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                      style={{
-                        backgroundColor: "white",
-                      }}
-                      required
+                  ) : (
+                    <PatientSignupForm
+                      formData={patientFormData}
+                      onChange={handlePatientInputChange}
                       disabled={isLoading}
                     />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium mb-2"
-                      style={{ color: "#005F73" }}
-                    >
-                      Password *
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                      style={{
-                        backgroundColor: "white",
-                      }}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  {/* Doctor-specific fields */}
-                  {userType === "doctor" && (
-                    <>
-                      <div>
-                        <label
-                          htmlFor="specialty"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Specialty *
-                        </label>
-                        <select
-                          id="specialty"
-                          name="specialty"
-                          value={formData.specialty}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-select"
-                          style={{
-                            backgroundColor: "white",
-                            color: "#000000",
-                          }}
-                          required
-                          disabled={isLoading}
-                        >
-                          <option value="">Select Specialty</option>
-                          <option value="General Physician">General Physician</option>
-                          <option value="Dentist">Dentist</option>
-                          <option value="Cardiologist">Cardiologist</option>
-                          <option value="Dermatologist">Dermatologist</option>
-                          <option value="Orthopedic">Orthopedic</option>
-                          <option value="Pediatrician">Pediatrician</option>
-                          <option value="Gynecologist">Gynecologist</option>
-                          <option value="ENT Specialist">ENT Specialist</option>
-                          <option value="Ophthalmologist">Ophthalmologist</option>
-                          <option value="Neurologist">Neurologist</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="clinicName"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Clinic/Hospital Name *
-                        </label>
-                        <input
-                          type="text"
-                          id="clinicName"
-                          name="clinicName"
-                          value={formData.clinicName}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                          style={{
-                            backgroundColor: "white",
-                          }}
-                          required
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="clinicAddress"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Clinic Address / Locality
-                        </label>
-                        <input
-                          type="text"
-                          id="clinicAddress"
-                          name="clinicAddress"
-                          value={formData.clinicAddress}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                          style={{
-                            backgroundColor: "white",
-                          }}
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="workingHours"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Working Hours
-                        </label>
-                        <input
-                          type="text"
-                          id="workingHours"
-                          name="workingHours"
-                          value={formData.workingHours}
-                          onChange={handleInputChange}
-                          placeholder="e.g., 9:00 AM - 6:00 PM"
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                          style={{
-                            backgroundColor: "white",
-                          }}
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="consultationDuration"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Consultation Duration (avg. per patient)
-                        </label>
-                        <select
-                          id="consultationDuration"
-                          name="consultationDuration"
-                          value={formData.consultationDuration}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-select"
-                          style={{
-                            backgroundColor: "white",
-                            color: "#000000",
-                          }}
-                          disabled={isLoading}
-                        >
-                          <option value="">Select Duration</option>
-                          <option value="15">15 minutes</option>
-                          <option value="20">20 minutes</option>
-                          <option value="30">30 minutes</option>
-                          <option value="45">45 minutes</option>
-                          <option value="60">60 minutes</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Patient-specific fields */}
-                  {userType === "patient" && (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label
-                            htmlFor="age"
-                            className="block text-sm font-medium mb-2"
-                            style={{ color: "#005F73" }}
-                          >
-                            Age
-                          </label>
-                          <input
-                            type="number"
-                            id="age"
-                            name="age"
-                            value={formData.age}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                            style={{
-                              backgroundColor: "white",
-                            }}
-                            disabled={isLoading}
-                            min="1"
-                            max="120"
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            htmlFor="gender"
-                            className="block text-sm font-medium mb-2"
-                            style={{ color: "#005F73" }}
-                          >
-                            Gender
-                          </label>
-                          <select
-                            id="gender"
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-select"
-                            style={{
-                              backgroundColor: "white",
-                              color: "#000000",
-                            }}
-                            disabled={isLoading}
-                          >
-                            <option value="">Select Gender</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                            <option value="Prefer not to say">Prefer not to say</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="address"
-                          className="block text-sm font-medium mb-2"
-                          style={{ color: "#005F73" }}
-                        >
-                          Address / Locality
-                        </label>
-                        <input
-                          type="text"
-                          id="address"
-                          name="address"
-                          value={formData.address}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-2 rounded-lg border-0 focus:outline-none focus:ring-2 focus:ring-[#005F73] transition-shadow duration-200 custom-placeholder"
-                          style={{
-                            backgroundColor: "white",
-                          }}
-                          disabled={isLoading}
-                          placeholder="For finding nearby doctors & pharmacies"
-                        />
-                      </div>
-                    </>
                   )}
 
                   <button
                     type="submit"
-                   disabled={
+                    disabled={
                       isLoading ||
-                      !formData.fullName.trim() ||
-                      !formData.password.trim() ||
-                      (userType === "doctor" && (!formData.emailOrMobile.trim() || !formData.specialty.trim() || !formData.clinicName.trim())) ||
-                      (userType === "patient" && !formData.mobileOrEmail.trim())
+                      !currentFormData.fullName.trim() ||
+                      !currentFormData.password.trim() ||
+                      (userType === "doctor" && (
+                        !(currentFormData as DoctorFormData).emailOrMobile.trim() || 
+                        !(currentFormData as DoctorFormData).specialty.trim() || 
+                        !(currentFormData as DoctorFormData).clinicName.trim()
+                      )) ||
+                      (userType === "patient" && !(currentFormData as PatientFormData).mobileOrEmail.trim())
                     }
                     className="w-full py-3 rounded-lg text-white font-semibold transition-all duration-200 hover:shadow-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                     style={{
@@ -653,7 +519,8 @@ const SignupComponent: React.FC<SignupComponentProps> = ({
           </AnimatePresence>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 
